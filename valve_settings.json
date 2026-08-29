@@ -1,0 +1,17 @@
+{
+    "control_enabled": true,
+    "valves": {
+        "1": {
+            "schedule_1_time": "08:00",
+            "schedule_1_duration": 5,
+            "schedule_2_time": "20:00",
+            "schedule_2_duration": 0
+        },
+        "2": {
+            "schedule_1_time": "08:00",
+            "schedule_1_duration": 0,
+            "schedule_2_time": "20:00",
+            "schedule_2_duration": 0
+        }
+    }
+}

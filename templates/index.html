@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>バルブコントロール</title>
+    <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <style>
+        :root {
+            --panel: #f0fff8;
+            --ink: #203330;
+            --muted: #647773;
+            --accent: seagreen;
+            --danger: slategray;
+            --border: #cccccc;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            padding: 24px 12px;
+            background-color: seagreen;
+            color: var(--ink);
+            font-family: Arial, sans-serif;
+        }
+        main { width: 90%; max-width: 500px; margin: 0 auto; }
+        header { margin: 4px 4px 18px; text-align: center; }
+        h1 { margin: 20px 0 6px; font-size: 1.8rem; letter-spacing: 0; }
+        .description { margin: 0; color: var(--muted); font-size: .88rem; }
+        .global-control, .valve-card {
+            background: #ffffff;
+            border: 1px solid var(--border);
+            border-radius: 15px;
+            box-shadow: 2px 2px 8px rgba(0,0,0,.1);
+        }
+        .control-shell {
+            background: #f0fff8;
+            border: 1px solid #b8d8ca;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 2px 2px 8px rgba(0,0,0,.1);
+        }
+        .global-control { padding: 14px 16px; margin-bottom: 14px; }
+        .global-row, .card-heading, .action-row, .form-row {
+            display: flex; align-items: center; justify-content: space-between; gap: 12px;
+        }
+        .global-row { font-weight: 700; }
+        .valve-card { padding: 18px 16px; margin-bottom: 14px; }
+        .card-heading { align-items: flex-start; margin-bottom: 16px; }
+        h2 { margin: 0; font-size: 1.25rem; }
+        .gpio { color: var(--muted); font-size: .78rem; }
+        .state { color: var(--muted); font-size: .9rem; font-weight: 700; }
+        .state.open { color: var(--accent); }
+        .state.closed { color: var(--danger); }
+        .schedule { border-top: 1px solid var(--border); padding-top: 14px; }
+        .schedule-title { margin: 0 0 10px; font-size: .9rem; color: var(--muted); }
+        .form-row { justify-content: flex-start; margin-bottom: 9px; }
+        .form-row label { width: 70px; font-size: .9rem; }
+        input[type="time"], input[type="number"] {
+            border: 1px solid var(--border); border-radius: 5px; padding: 8px;
+            background: white; color: var(--ink); font: inherit;
+        }
+        input[type="number"] { width: 92px; }
+        .unit { color: var(--muted); font-size: .85rem; }
+        button {
+            border: 0; border-radius: 6px; padding: 9px 14px; color: white;
+            background: #2196f3; cursor: pointer; font: inherit; font-weight: 700;
+        }
+        button:hover { filter: brightness(1.08); }
+        button.save { background: seagreen; }
+        button.secondary { background: #71827e; }
+        button.danger { background: #dc3545; }
+        .action-row { margin-top: 16px; justify-content: flex-start; }
+        .message { min-height: 1.3em; margin: 4px; color: var(--muted); font-size: .85rem; }
+        .switch { position: relative; display: inline-block; width: 60px; height: 30px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; inset: 0; border-radius: 28px; background: #cccccc; cursor: pointer; transition: .4s; }
+        .slider::before { content: ""; position: absolute; width: 23px; height: 23px; left: 5px; bottom: 3px; border-radius: 50%; background: white; transition: .4s; }
+        .switch input:checked + .slider { background: var(--accent); }
+        .switch input:checked + .slider::before { transform: translateX(28px); }
+        @media (max-width: 380px) {
+            body { padding: 16px 8px; }
+            .form-row label { width: 58px; }
+            input[type="time"] { width: 112px; }
+        }
+    </style>
+</head>
+<body>
+<main>
+    <div class="control-shell">
+    <header>
+        <h1><span aria-hidden="true">🚰</span> 電動ボールバルブ</h1>
+    </header>
+    <section class="global-control">
+        <div class="global-row">
+            <span>自動制御</span>
+            <label class="switch" title="自動制御のON/OFF">
+                <input type="checkbox" id="control-enabled">
+                <span class="slider"></span>
+            </label>
+        </div>
+    </section>
+
+    <form id="settings-form">
+        <section class="valve-card" data-valve="1">
+            <div class="card-heading"><div><h2>バルブ1</h2><span class="gpio">GPIO 17</span></div><span class="state" data-state>状態取得中</span></div>
+            <div class="schedule"><p class="schedule-title">開くスケジュール（0分でスキップ）</p>
+                <div class="form-row"><label>1回目</label><input type="time" data-field="schedule_1_time" required><input type="number" min="0" max="1440" data-field="schedule_1_duration" required><span class="unit">分</span></div>
+                <div class="form-row"><label>2回目</label><input type="time" data-field="schedule_2_time" required><input type="number" min="0" max="1440" data-field="schedule_2_duration" required><span class="unit">分</span></div>
+            </div>
+            <div class="action-row"><strong>手動操作</strong><input type="number" min="1" max="1440" value="30" data-manual-duration aria-label="最大開放時間"><span class="unit">分</span><button type="button" data-action="open">開放</button><button type="button" class="danger" data-action="close">閉鎖</button></div>
+        </section>
+        <section class="valve-card" data-valve="2">
+            <div class="card-heading"><div><h2>バルブ2</h2><span class="gpio">GPIO 27</span></div><span class="state" data-state>状態取得中</span></div>
+            <div class="schedule"><p class="schedule-title">開くスケジュール（0分でスキップ）</p>
+                <div class="form-row"><label>1回目</label><input type="time" data-field="schedule_1_time" required><input type="number" min="0" max="1440" data-field="schedule_1_duration" required><span class="unit">分</span></div>
+                <div class="form-row"><label>2回目</label><input type="time" data-field="schedule_2_time" required><input type="number" min="0" max="1440" data-field="schedule_2_duration" required><span class="unit">分</span></div>
+            </div>
+            <div class="action-row"><strong>手動操作</strong><input type="number" min="1" max="1440" value="30" data-manual-duration aria-label="最大開放時間"><span class="unit">分</span><button type="button" data-action="open">開放</button><button type="button" class="danger" data-action="close">閉鎖</button></div>
+        </section>
+        <div class="action-row"><button type="submit" class="save">保存</button><button type="button" class="secondary" id="reset">リセット</button></div>
+        <p class="message" id="message"></p>
+    </form>
+    </div>
+</main>
+<script>
+const form = document.getElementById("settings-form");
+const message = document.getElementById("message");
+const cards = [...document.querySelectorAll("[data-valve]")];
+
+function setMessage(text) { message.textContent = text; }
+function updateState(data) {
+    document.getElementById("control-enabled").checked = data.control_enabled;
+    cards.forEach(card => {
+        const valve = data.valves[card.dataset.valve];
+        const state = card.querySelector("[data-state]");
+        if (Object.prototype.hasOwnProperty.call(valve, "open")) {
+            state.textContent = valve.open ? "開" : "閉";
+            state.className = "state " + (valve.open ? "open" : "closed");
+        }
+        card.querySelectorAll("[data-field]").forEach(input => { input.value = valve[input.dataset.field]; });
+    });
+}
+async function loadSettings() {
+    const response = await fetch("/api/settings");
+    updateState(await response.json());
+}
+async function loadStatus() {
+    const response = await fetch("/api/status");
+    updateState(await response.json());
+}
+form.addEventListener("submit", async event => {
+    event.preventDefault();
+    const settings = { control_enabled: document.getElementById("control-enabled").checked, valves: {} };
+    cards.forEach(card => {
+        const values = {};
+        card.querySelectorAll("[data-field]").forEach(input => {
+            values[input.dataset.field] = input.type === "number" ? Number(input.value) : input.value;
+        });
+        settings.valves[card.dataset.valve] = values;
+    });
+    const response = await fetch("/api/settings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(settings) });
+    setMessage(response.ok ? "設定を保存しました" : "設定を保存できませんでした");
+    if (response.ok) await loadStatus();
+});
+document.getElementById("reset").addEventListener("click", loadSettings);
+cards.forEach(card => card.querySelectorAll("[data-action]").forEach(button => button.addEventListener("click", async () => {
+    const payload = { action: button.dataset.action };
+    if (button.dataset.action === "open") payload.max_duration = Number(card.querySelector("[data-manual-duration]").value);
+    const response = await fetch(`/api/valve/${card.dataset.valve}/manual`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+    setMessage(response.ok ? "手動操作を実行しました" : "手動操作に失敗しました");
+    if (response.ok) updateState(await response.json());
+})));
+loadSettings();
+loadStatus();
+setInterval(loadStatus, 10000);
+</script>
+</body>
+</html>

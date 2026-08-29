@@ -1,0 +1,13 @@
+[Unit]
+Description=Electric Ball Valve Control Service
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/pi/work/valve_control/
+ExecStart=/usr/bin/python3 /home/pi/work/valve_control/app.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
