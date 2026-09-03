@@ -5,6 +5,7 @@ import json
 import logging
 import os
 import signal
+import sys
 import threading
 from datetime import datetime
 from flask import Flask, jsonify, render_template, request
@@ -141,6 +142,8 @@ class ValveController:
     def __init__(self):
         self.lock = threading.RLock()
         self.stop_event = threading.Event()
+        self.stop_lock = threading.Lock()
+        self.stopped = False
         self.settings = load_settings()
         self.devices = {
             "1": create_output_device(GPIO_VALVE_1),
@@ -225,6 +228,10 @@ class ValveController:
                 logger.exception("バルブ自動制御中に例外が発生しました")
 
     def stop(self):
+        with self.stop_lock:
+            if self.stopped:
+                return
+            self.stopped = True
         self.stop_event.set()
         if self.thread.is_alive():
             self.thread.join(timeout=3)
@@ -286,7 +293,8 @@ def manual_api(valve_id):
 
 
 def shutdown(signum=None, frame=None):
-    controller.stop()
+    logger.info("停止シグナルを受信しました: %s", signum)
+    sys.exit(0)
 
 
 if __name__ == "__main__":
