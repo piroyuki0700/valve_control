@@ -108,7 +108,7 @@
                 <div class="form-row"><label>1回目</label><input type="time" data-field="schedule_1_time" required><input type="number" min="0" max="1440" data-field="schedule_1_duration" required><span class="unit">分</span></div>
                 <div class="form-row"><label>2回目</label><input type="time" data-field="schedule_2_time" required><input type="number" min="0" max="1440" data-field="schedule_2_duration" required><span class="unit">分</span></div>
             </div>
-            <div class="action-row"><strong>手動操作</strong><input type="number" min="1" max="1440" value="30" data-manual-duration aria-label="最大開放時間"><span class="unit">分</span><button type="button" data-action="open">開放</button><button type="button" class="danger" data-action="close">閉鎖</button></div>
+            <div class="action-row"><strong>手動操作</strong><input type="number" min="1" max="1440" data-field="manual_max_duration" required aria-label="最大開放時間"><span class="unit">分</span><button type="button" data-action="open">開放</button><button type="button" class="danger" data-action="close">閉鎖</button></div>
         </section>
         <section class="valve-card" data-valve="2">
             <div class="card-heading"><div><h2>バルブ2</h2><span class="gpio">GPIO 27</span></div><span class="state" data-state>状態取得中</span></div>
@@ -116,7 +116,7 @@
                 <div class="form-row"><label>1回目</label><input type="time" data-field="schedule_1_time" required><input type="number" min="0" max="1440" data-field="schedule_1_duration" required><span class="unit">分</span></div>
                 <div class="form-row"><label>2回目</label><input type="time" data-field="schedule_2_time" required><input type="number" min="0" max="1440" data-field="schedule_2_duration" required><span class="unit">分</span></div>
             </div>
-            <div class="action-row"><strong>手動操作</strong><input type="number" min="1" max="1440" value="30" data-manual-duration aria-label="最大開放時間"><span class="unit">分</span><button type="button" data-action="open">開放</button><button type="button" class="danger" data-action="close">閉鎖</button></div>
+            <div class="action-row"><strong>手動操作</strong><input type="number" min="1" max="1440" data-field="manual_max_duration" required aria-label="最大開放時間"><span class="unit">分</span><button type="button" data-action="open">開放</button><button type="button" class="danger" data-action="close">閉鎖</button></div>
         </section>
         <div class="action-row"><button type="submit" class="save">保存</button><button type="button" class="secondary" id="reset">リセット</button></div>
         <p class="message" id="message"></p>
@@ -166,7 +166,7 @@ form.addEventListener("submit", async event => {
 document.getElementById("reset").addEventListener("click", loadSettings);
 cards.forEach(card => card.querySelectorAll("[data-action]").forEach(button => button.addEventListener("click", async () => {
     const payload = { action: button.dataset.action };
-    if (button.dataset.action === "open") payload.max_duration = Number(card.querySelector("[data-manual-duration]").value);
+    if (button.dataset.action === "open") payload.max_duration = Number(card.querySelector('[data-field="manual_max_duration"]').value);
     const response = await fetch(`/api/valve/${card.dataset.valve}/manual`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
     setMessage(response.ok ? "手動操作を実行しました" : "手動操作に失敗しました");
     if (response.ok) updateState(await response.json());

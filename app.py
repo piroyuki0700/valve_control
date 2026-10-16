@@ -28,12 +28,14 @@ DEFAULT_SETTINGS = {
             "schedule_1_duration": 0,
             "schedule_2_time": "20:00",
             "schedule_2_duration": 0,
+            "manual_max_duration": 30,
         },
         "2": {
             "schedule_1_time": "08:00",
             "schedule_1_duration": 0,
             "schedule_2_time": "20:00",
             "schedule_2_duration": 0,
+            "manual_max_duration": 30,
         },
     },
 }
@@ -113,6 +115,15 @@ def normalize_settings(settings):
             if duration < 0 or duration > 1440:
                 raise ValueError(f"{duration_key} は0から1440の範囲で指定してください")
             normalized["valves"][valve_id][duration_key] = duration
+        try:
+            manual_max_duration = int(
+                source.get("manual_max_duration", normalized["valves"][valve_id]["manual_max_duration"])
+            )
+        except (TypeError, ValueError):
+            raise ValueError("manual_max_duration は整数で指定してください")
+        if manual_max_duration < 1 or manual_max_duration > 1440:
+            raise ValueError("manual_max_duration は1から1440の範囲で指定してください")
+        normalized["valves"][valve_id]["manual_max_duration"] = manual_max_duration
     return normalized
 
 
